@@ -21,10 +21,12 @@ from banco.repositorio import (
 def test_seed_carregada(conn: sqlite3.Connection) -> None:
     assert len(listar_categorias(conn)) == 3
     assert len(listar_pessoas(conn)) == 6
-    assert len(listar_itens(conn, 1)) == 8
+    assert len(listar_itens(conn, 1)) == 50
+    assert len(listar_itens(conn, 2)) == 50
+    assert len(listar_itens(conn, 3)) == 48
 
     total_itens = sum(len(listar_itens(conn, c["id"])) for c in listar_categorias(conn))
-    assert total_itens == 24
+    assert total_itens == 148
 
 
 def test_categorias_tem_os_eixos(conn: sqlite3.Connection) -> None:
@@ -40,7 +42,7 @@ def test_inicializar_de_novo_nao_duplica(conn: sqlite3.Connection) -> None:
 
     assert len(listar_categorias(conn)) == 3
     assert len(listar_pessoas(conn)) == 6
-    assert len(listar_itens(conn, 1)) == 8
+    assert len(listar_itens(conn, 1)) == 50
     assert len(listar_notas(conn, 1)) == 6
 
 
@@ -82,10 +84,10 @@ def test_ranking_de_categorias_diferentes_nao_se_misturam(
     conn: sqlite3.Connection,
 ) -> None:
     salvar_ranking(conn, 1, 1, [1, 2, 3, 4, 5, 6, 7, 8])
-    salvar_ranking(conn, 1, 2, [9, 10, 11, 12, 13, 14, 15, 16])
+    salvar_ranking(conn, 1, 2, [51, 52, 53, 54, 55, 56, 57, 58])
 
     assert obter_ranking(conn, 1, 1) == [1, 2, 3, 4, 5, 6, 7, 8]
-    assert obter_ranking(conn, 1, 2) == [9, 10, 11, 12, 13, 14, 15, 16]
+    assert obter_ranking(conn, 1, 2) == [51, 52, 53, 54, 55, 56, 57, 58]
 
 
 def test_obter_ranking_inexistente(conn: sqlite3.Connection) -> None:
@@ -119,7 +121,7 @@ def test_salvar_ranking_com_item_repetido(conn: sqlite3.Connection) -> None:
 
 def test_salvar_ranking_com_item_de_outra_categoria(conn: sqlite3.Connection) -> None:
     with pytest.raises(ValueError, match="não pertence à categoria"):
-        salvar_ranking(conn, 1, 1, [1, 2, 3, 4, 5, 6, 7, 9])
+        salvar_ranking(conn, 1, 1, [1, 2, 3, 4, 5, 6, 7, 51])
 
 
 def test_salvar_ranking_de_pessoa_inexistente(conn: sqlite3.Connection) -> None:
@@ -131,7 +133,7 @@ def test_salvar_ranking_invalido_nao_grava_nada(conn: sqlite3.Connection) -> Non
     salvar_ranking(conn, 1, 1, [1, 2, 3, 4, 5, 6, 7, 8])
 
     with pytest.raises(ValueError):
-        salvar_ranking(conn, 1, 1, [1, 2, 9])
+        salvar_ranking(conn, 1, 1, [1, 2, 51])
 
     assert obter_ranking(conn, 1, 1) == [1, 2, 3, 4, 5, 6, 7, 8]
 
