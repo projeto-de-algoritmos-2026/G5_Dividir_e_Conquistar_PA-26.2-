@@ -53,3 +53,7 @@ Complexidade **O(n log n)**, contra O(n²) da força bruta. Até 3 pontos, o cas
 Implementação: [`algoritmos/par_mais_proximo.py`](algoritmos/par_mais_proximo.py).
 
 Os dois algoritmos são testados contra uma força bruta O(n²) em 200 casos aleatórios cada, incluindo pontos repetidos e vários pontos com o mesmo x.
+
+### Vídeo de apresentação
+
+[Clique aqui para assistir ao vídeo de apresentação](LINK_DO_VIDEO)
