@@ -124,13 +124,16 @@ Com o ambiente virtual ativado, na raiz do repositório:
 streamlit run app.py
 ```
 
-O app abre no navegador em `http://localhost:8501`. Na primeira execução, o banco `banco/ranking_match.db` é criado a partir de [`banco/schema.sql`](banco/schema.sql) e [`banco/seed.sql`](banco/seed.sql). A seed traz as 3 categorias, 148 itens (50 jogos, 50 bandas de rock e metal e 48 séries e animes) e 6 pessoas de exemplo (Ana, Bruno, Carla, Diego, Elisa e Felipe) já com notas.
+O app abre no navegador em `http://localhost:8501`. Na primeira execução, o banco `banco/ranking_match.db` é criado a partir de [`banco/schema.sql`](banco/schema.sql), [`banco/seed.sql`](banco/seed.sql) e [`banco/mock.sql`](banco/mock.sql):
+
+- **Seed**: as 3 categorias, 148 itens (50 jogos, 50 bandas de rock e metal e 48 séries e animes) e 6 pessoas com notas.
+- **Mock**: perfis fictícios para a demonstração, com 4 pessoas a mais (10 no total) e a lista de interesses de todas nas 3 categorias, coerente com as notas de cada uma. O mock só é aplicado uma vez, num banco novo, então o que for editado pelo app não é sobrescrito.
 
 Roteiro sugerido:
 
-1. **Dupla mais parecida**: já funciona com os dados da seed. Escolha uma categoria para ver o gráfico e a dupla mais próxima.
+1. **Dupla mais parecida**: escolha uma categoria para ver o gráfico das 10 pessoas e a dupla mais próxima.
 2. **Cadastro**: cadastre-se, escolha uma categoria, clique nos itens de que gosta, começando pelos que mais gosta, e salve a lista. Ajuste as notas nos dois eixos e salve também.
-3. **Compatibilidade**: a seed não tem listas, então salve a lista de pelo menos 2 pessoas na mesma categoria pelo Cadastro. Depois, veja quem é mais compatível com quem.
+3. **Compatibilidade**: veja quem é mais compatível com quem. Com o mock, Elisa e Helena dão 71,4% em Jogos e Ana e Carla dão 50% em Bandas.
 
 Para voltar o banco ao estado inicial, feche o app, apague o arquivo `banco/ranking_match.db` e rode de novo. Faça isso também depois de atualizar o repositório quando a seed mudar: ela só insere o que ainda não existe, então um banco antigo continua com as categorias e os itens antigos.
 
@@ -149,7 +152,7 @@ app.py               ponto de entrada do Streamlit (abas)
 paginas/             uma página por aba: cadastro, compatibilidade, dupla
 servicos/            regras de cada aba, chamadas pela interface
 algoritmos/          contagem de inversões e par de pontos mais próximo
-banco/               schema, seed, conexão e acesso ao SQLite
-tests/               testes com pytest (algoritmos contra força bruta, banco e serviços)
+banco/               schema, seed, mock, conexão e acesso ao SQLite
+tests/               testes com pytest (algoritmos contra força bruta, banco, serviços e mock)
 docs/screenshots/    imagens deste README
 ```

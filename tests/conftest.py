@@ -19,8 +19,8 @@ from banco.conexao import conectar  # noqa: E402
 
 @pytest.fixture
 def conn() -> Iterator[sqlite3.Connection]:
-    """Conexão em memória já inicializada com schema.sql e seed.sql."""
-    conexao = conectar(":memory:")
+    """Conexão em memória com schema.sql e seed.sql, sem os perfis do mock."""
+    conexao = conectar(":memory:", com_mock=False)
     try:
         yield conexao
     finally:
