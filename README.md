@@ -57,3 +57,17 @@ Os dois algoritmos são testados contra uma força bruta O(n²) em 200 casos ale
 ### Vídeo de apresentação
 
 [Clique aqui para assistir ao vídeo de apresentação](LINK_DO_VIDEO)
+
+## Screenshots
+
+**Cadastro**: a pessoa clica nos itens do favorito ao menos favorito e ajusta as notas nos dois eixos da categoria.
+
+![Aba Cadastro](docs/screenshots/cadastro.png)
+
+**Compatibilidade**: as pessoas mais compatíveis com a selecionada e a comparação direta entre duas, com os rankings lado a lado.
+
+![Aba Compatibilidade](docs/screenshots/compatibilidade.png)
+
+**Dupla mais parecida**: notas da categoria no plano, com o par de pontos mais próximo destacado.
+
+![Aba Dupla mais parecida](docs/screenshots/dupla.png)
