@@ -4,7 +4,12 @@ import sqlite3
 
 import streamlit as st
 
-from banco.repositorio import listar_categorias, pessoas_com_ranking
+from banco.repositorio import (
+    listar_categorias,
+    listar_itens,
+    obter_ranking,
+    pessoas_com_ranking,
+)
 from servicos.compatibilidade import compatibilidade, ranking_compatibilidade
 
 
@@ -96,4 +101,33 @@ def _secao_comparacao(
     col_inversoes.metric(
         "Pares em desacordo (inversões)",
         f"{resultado['inversoes']} de {resultado['total_pares']}",
+    )
+
+    _rankings_lado_a_lado(conn, categoria_id, nomes, pessoa_a_id, pessoa_b_id)
+
+
+def _rankings_lado_a_lado(
+    conn: sqlite3.Connection,
+    categoria_id: int,
+    nomes: dict[int, str],
+    pessoa_a_id: int,
+    pessoa_b_id: int,
+) -> None:
+    """Os dois rankings, posição por posição, para ver onde eles discordam."""
+    nomes_itens = {i["id"]: i["nome"] for i in listar_itens(conn, categoria_id)}
+    ranking_a = obter_ranking(conn, pessoa_a_id, categoria_id)
+    ranking_b = obter_ranking(conn, pessoa_b_id, categoria_id)
+
+    st.dataframe(
+        [
+            {
+                "Posição": posicao,
+                nomes[pessoa_a_id]: nomes_itens[item_a],
+                nomes[pessoa_b_id]: nomes_itens[item_b],
+            }
+            for posicao, (item_a, item_b) in enumerate(
+                zip(ranking_a, ranking_b), start=1
+            )
+        ],
+        hide_index=True,
     )
