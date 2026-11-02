@@ -36,6 +36,16 @@ def render(conn: sqlite3.Connection) -> None:
 
     st.altair_chart(_grafico(notas, ids_dupla, categoria), width="stretch")
 
+    pessoa_a, pessoa_b = dupla["pessoa_a"], dupla["pessoa_b"]
+    col_dupla, col_distancia = st.columns(2)
+    col_dupla.metric("Dupla mais parecida", f"{pessoa_a['nome']} e {pessoa_b['nome']}")
+    col_distancia.metric("Distância", f"{dupla['distancia']:.2f}")
+    st.caption(
+        f"{pessoa_a['nome']}: ({pessoa_a['x']:g}, {pessoa_a['y']:g}) · "
+        f"{pessoa_b['nome']}: ({pessoa_b['x']:g}, {pessoa_b['y']:g}). "
+        "Par de pontos mais próximo, encontrado por divisão e conquista."
+    )
+
 
 def _grafico(notas: list[dict], ids_dupla: set[int], categoria: dict) -> alt.LayerChart:
     """Gráfico de dispersão das notas, com a dupla destacada e ligada por uma linha."""
