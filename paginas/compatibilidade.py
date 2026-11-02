@@ -20,6 +20,12 @@ def render(conn: sqlite3.Connection) -> None:
     # Só entra quem tem ranking completo na categoria: sem ranking não há o que
     # comparar.
     nomes = {p["id"]: p["nome"] for p in pessoas_com_ranking(conn, categoria_id)}
+    if len(nomes) < 2:
+        st.info(
+            "São necessárias pelo menos 2 pessoas com ranking nessa categoria. "
+            "Salve os rankings na aba Cadastro."
+        )
+        return
 
     # A chave inclui a categoria porque a lista de pessoas muda de uma
     # categoria para outra.
