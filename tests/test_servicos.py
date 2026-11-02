@@ -66,6 +66,8 @@ def test_compatibilidade_rankings_identicos(conn: sqlite3.Connection) -> None:
     salvar_ranking(conn, BRUNO, 1, ORDEM_BASE)
 
     assert compatibilidade(conn, ANA, BRUNO, 1) == {
+        "em_comum": 8,
+        "escolhidos": 8,
         "inversoes": 0,
         "total_pares": 28,
         "percentual": 100.0,
@@ -77,6 +79,8 @@ def test_compatibilidade_rankings_invertidos(conn: sqlite3.Connection) -> None:
     salvar_ranking(conn, BRUNO, 1, ORDEM_INVERTIDA)
 
     assert compatibilidade(conn, ANA, BRUNO, 1) == {
+        "em_comum": 8,
+        "escolhidos": 8,
         "inversoes": 28,
         "total_pares": 28,
         "percentual": 0.0,
@@ -90,6 +94,8 @@ def test_compatibilidade_caso_intermediario(conn: sqlite3.Connection) -> None:
     salvar_ranking(conn, BRUNO, 1, [3, 2, 1, 4, 5, 6, 7, 8])
 
     assert compatibilidade(conn, ANA, BRUNO, 1) == {
+        "em_comum": 8,
+        "escolhidos": 8,
         "inversoes": 3,
         "total_pares": 28,
         "percentual": 89.3,
@@ -102,6 +108,8 @@ def test_compatibilidade_troca_de_vizinhos(conn: sqlite3.Connection) -> None:
     salvar_ranking(conn, BRUNO, 1, [2, 1, 3, 4, 5, 6, 7, 8])
 
     assert compatibilidade(conn, ANA, BRUNO, 1) == {
+        "em_comum": 8,
+        "escolhidos": 8,
         "inversoes": 1,
         "total_pares": 28,
         "percentual": 96.4,
@@ -111,6 +119,63 @@ def test_compatibilidade_troca_de_vizinhos(conn: sqlite3.Connection) -> None:
 def test_compatibilidade_e_simetrica(conn: sqlite3.Connection) -> None:
     salvar_ranking(conn, ANA, 1, ORDEM_BASE)
     salvar_ranking(conn, BRUNO, 1, [3, 2, 1, 8, 5, 6, 7, 4])
+
+    assert compatibilidade(conn, ANA, BRUNO, 1) == compatibilidade(
+        conn, BRUNO, ANA, 1
+    )
+
+
+def test_compatibilidade_parcial_com_inversao(conn: sqlite3.Connection) -> None:
+    # Em comum, na ordem de Ana: [1, 2, 3]. Posições de Bruno: [1, 0, 2] -> 1
+    # inversão (o par 1-2) em 3 pares. Escolhidos por algum: {1, 2, 3, 4, 5}.
+    # 100 * (3/5) * (1 - 1/3) = 40.0
+    salvar_ranking(conn, ANA, 1, [1, 2, 3, 4])
+    salvar_ranking(conn, BRUNO, 1, [2, 1, 3, 5])
+
+    assert compatibilidade(conn, ANA, BRUNO, 1) == {
+        "em_comum": 3,
+        "escolhidos": 5,
+        "inversoes": 1,
+        "total_pares": 3,
+        "percentual": 40.0,
+    }
+
+
+def test_compatibilidade_parcial_mesma_ordem(conn: sqlite3.Connection) -> None:
+    # Bruno concorda na ordem, mas só escolheu 3 dos 4 itens de Ana: 100 * 3/4.
+    salvar_ranking(conn, ANA, 1, [1, 2, 3, 4])
+    salvar_ranking(conn, BRUNO, 1, [1, 2, 3])
+
+    assert compatibilidade(conn, ANA, BRUNO, 1)["percentual"] == 75.0
+
+
+def test_compatibilidade_um_item_em_comum(conn: sqlite3.Connection) -> None:
+    # Com 1 item em comum não há par para discordar: só a sobreposição (1/3).
+    salvar_ranking(conn, ANA, 1, [1, 2])
+    salvar_ranking(conn, BRUNO, 1, [2, 3])
+
+    resultado = compatibilidade(conn, ANA, BRUNO, 1)
+
+    assert (resultado["em_comum"], resultado["total_pares"]) == (1, 0)
+    assert resultado["percentual"] == 33.3
+
+
+def test_compatibilidade_nada_em_comum(conn: sqlite3.Connection) -> None:
+    salvar_ranking(conn, ANA, 1, [1, 2, 3])
+    salvar_ranking(conn, BRUNO, 1, [4, 5])
+
+    assert compatibilidade(conn, ANA, BRUNO, 1) == {
+        "em_comum": 0,
+        "escolhidos": 5,
+        "inversoes": 0,
+        "total_pares": 0,
+        "percentual": 0.0,
+    }
+
+
+def test_compatibilidade_parcial_e_simetrica(conn: sqlite3.Connection) -> None:
+    salvar_ranking(conn, ANA, 1, [8, 1, 2, 3, 4])
+    salvar_ranking(conn, BRUNO, 1, [2, 1, 3, 5, 8])
 
     assert compatibilidade(conn, ANA, BRUNO, 1) == compatibilidade(
         conn, BRUNO, ANA, 1
@@ -152,7 +217,13 @@ def test_ranking_compatibilidade_ordenado(conn: sqlite3.Connection) -> None:
         ("Carla", 89.3),
         ("Diego", 0.0),
     ]
-    assert set(resultado[0]) == {"pessoa_id", "nome", "inversoes", "percentual"}
+    assert set(resultado[0]) == {
+        "pessoa_id",
+        "nome",
+        "em_comum",
+        "inversoes",
+        "percentual",
+    }
     assert resultado[-1]["inversoes"] == 28
 
 
