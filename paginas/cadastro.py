@@ -1,6 +1,7 @@
 """Aba Cadastro: criar pessoa e salvar ranking e notas."""
 
 import sqlite3
+import unicodedata
 
 import streamlit as st
 
@@ -44,11 +45,11 @@ def render(conn: sqlite3.Connection) -> None:
         key="cadastro_categoria",
     )
 
-    col_ranking, col_notas = st.columns(2, gap="large")
-    with col_ranking:
-        _secao_ranking(conn, pessoa_id, categoria_id)
-    with col_notas:
-        _secao_notas(conn, pessoa_id, categorias_por_id[categoria_id])
+    # Com ~50 itens por categoria, a escolha ocupa a largura toda e as notas
+    # ficam logo abaixo.
+    _secao_ranking(conn, pessoa_id, categoria_id)
+    st.divider()
+    _secao_notas(conn, pessoa_id, categorias_por_id[categoria_id])
 
 
 def _secao_nova_pessoa(conn: sqlite3.Connection) -> None:
@@ -95,15 +96,56 @@ def _secao_ranking(conn: sqlite3.Connection, pessoa_id: int, categoria_id: int) 
         st.session_state[chave] = salvo
     escolhidos: list[int] = st.session_state[chave]
 
-    colunas = st.columns(2)
-    for indice, item in enumerate(itens):
+    col_itens, col_lista = st.columns([3, 1], gap="large")
+
+    with col_itens:
+        busca = st.text_input(
+            "Buscar",
+            placeholder="Digite parte do nome",
+            key=f"cadastro_busca_{categoria_id}",
+        )
+        _grade_de_itens(itens, escolhidos, busca, chave, pessoa_id, categoria_id)
+
+    with col_lista:
+        _sua_lista(conn, pessoa_id, categoria_id, nomes_itens, escolhidos, salvo, chave)
+
+
+def _sem_acento(texto: str) -> str:
+    """Minúsculas e sem acentos, para a busca achar "porao" em "Porão"."""
+    decomposto = unicodedata.normalize("NFD", texto.casefold())
+    return "".join(c for c in decomposto if unicodedata.category(c) != "Mn")
+
+
+def _grade_de_itens(
+    itens: list[dict],
+    escolhidos: list[int],
+    busca: str,
+    chave: str,
+    pessoa_id: int,
+    categoria_id: int,
+) -> None:
+    """Botões dos itens em ordem alfabética, filtrados pela busca."""
+    termo = _sem_acento(busca.strip())
+    visiveis = sorted(
+        (i for i in itens if termo in _sem_acento(i["nome"])),
+        key=lambda i: _sem_acento(i["nome"]),
+    )
+    if not visiveis:
+        st.caption("Nenhum item encontrado.")
+        return
+
+    # Preenche coluna por coluna, para a ordem alfabética ser lida de cima
+    # para baixo.
+    por_coluna = -(-len(visiveis) // 3)
+    colunas = st.columns(3)
+    for indice, item in enumerate(visiveis):
         selecionado = item["id"] in escolhidos
         rotulo = (
             f"{escolhidos.index(item['id']) + 1}. {item['nome']}"
             if selecionado
             else item["nome"]
         )
-        colunas[indice % 2].button(
+        colunas[indice // por_coluna].button(
             rotulo,
             key=f"cadastro_item_{pessoa_id}_{categoria_id}_{item['id']}",
             type="primary" if selecionado else "secondary",
@@ -112,6 +154,17 @@ def _secao_ranking(conn: sqlite3.Connection, pessoa_id: int, categoria_id: int) 
             args=(chave, item["id"]),
         )
 
+
+def _sua_lista(
+    conn: sqlite3.Connection,
+    pessoa_id: int,
+    categoria_id: int,
+    nomes_itens: dict[int, str],
+    escolhidos: list[int],
+    salvo: list[int],
+    chave: str,
+) -> None:
+    """Lista numerada do que a pessoa escolheu, com os botões de salvar e limpar."""
     st.markdown("**Sua lista**")
     if escolhidos:
         st.markdown(
