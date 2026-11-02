@@ -37,8 +37,8 @@ def test_categorias_tem_os_eixos(conn: sqlite3.Connection) -> None:
 
 
 def test_inicializar_de_novo_nao_duplica(conn: sqlite3.Connection) -> None:
-    inicializar(conn)
-    inicializar(conn)
+    inicializar(conn, com_mock=False)
+    inicializar(conn, com_mock=False)
 
     assert len(listar_categorias(conn)) == 3
     assert len(listar_pessoas(conn)) == 6
