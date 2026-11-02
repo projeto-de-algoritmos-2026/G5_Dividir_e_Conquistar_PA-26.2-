@@ -11,9 +11,9 @@
 
 ## Sobre
 
-O **Ranking Match** descobre afinidades entre pessoas a partir dos gostos delas em três categorias: **Jogos**, **Músicas** e **Séries/Animes**. Cada pessoa informa duas coisas por categoria:
+O **Ranking Match** descobre afinidades entre pessoas a partir dos gostos delas em três categorias: **Jogos** (50), **Bandas** de rock e metal (50) e **Séries/Animes** (48). Cada pessoa informa duas coisas por categoria:
 
-- **Do que gosta**: dos 8 itens da categoria, a pessoa clica só nos de que gosta, começando pelos que mais gosta. A ordem dos cliques é a ordem de preferência.
+- **Do que gosta**: entre os itens da categoria, a pessoa clica só nos de que gosta, começando pelos que mais gosta. A ordem dos cliques é a ordem de preferência.
 - **Um ponto (x, y)**, com notas de 0 a 10 em dois eixos que descrevem o gosto dela. Em Jogos, por exemplo, os eixos são *Casual → Competitivo* e *História → Gameplay*.
 
 Com esses dados o app tem duas abas de resultado, cada uma resolvida por um algoritmo de divisão e conquista:
@@ -46,7 +46,7 @@ compatibilidade = 100 × (em comum / escolhidos) × (1 − inversões / pares)
 - `em comum`: itens que as duas escolheram; `escolhidos`: itens que pelo menos uma escolheu.
 - `pares = c(c − 1)/2`, com `c` itens em comum. Com menos de 2 itens em comum não há par para discordar, e esse fator vale 1.
 
-Exemplo: Ana escolhe `[Minecraft, CS2, Stardew, Elden Ring]` e Bruno `[CS2, Minecraft, Stardew, LoL]`. Em comum há 3 itens de 5 escolhidos, e a única discordância é Minecraft × CS2 (1 inversão em 3 pares). Compatibilidade = `100 × 3/5 × (1 − 1/3) = 40%`. Duas listas iguais dão 100%, e listas sem nada em comum dão 0%.
+Exemplo: Ana escolhe `[Minecraft, Counter-Strike 2, Stardew Valley, Elden Ring]` e Bruno `[Counter-Strike 2, Minecraft, Stardew Valley, League of Legends]`. Em comum há 3 itens de 5 escolhidos, e a única discordância é Minecraft × Counter-Strike 2 (1 inversão em 3 pares). Compatibilidade = `100 × 3/5 × (1 − 1/3) = 40%`. Duas listas iguais dão 100%, e listas sem nada em comum dão 0%.
 
 Implementação: [`algoritmos/inversoes.py`](algoritmos/inversoes.py).
 
@@ -71,7 +71,7 @@ Os dois algoritmos são testados contra uma força bruta O(n²) em 200 casos ale
 
 ## Screenshots
 
-**Cadastro**: todos os itens da categoria ficam visíveis; a pessoa clica nos de que gosta, que entram numerados na lista dela, e ajusta as notas nos dois eixos.
+**Cadastro**: todos os itens da categoria ficam visíveis em ordem alfabética, com busca; a pessoa clica nos de que gosta, que entram numerados na lista dela, e ajusta as notas nos dois eixos.
 
 ![Aba Cadastro](docs/screenshots/cadastro.png)
 
@@ -124,7 +124,7 @@ Com o ambiente virtual ativado, na raiz do repositório:
 streamlit run app.py
 ```
 
-O app abre no navegador em `http://localhost:8501`. Na primeira execução, o banco `banco/ranking_match.db` é criado a partir de [`banco/schema.sql`](banco/schema.sql) e [`banco/seed.sql`](banco/seed.sql). A seed traz as 3 categorias, os 24 itens e 6 pessoas de exemplo (Ana, Bruno, Carla, Diego, Elisa e Felipe) já com notas.
+O app abre no navegador em `http://localhost:8501`. Na primeira execução, o banco `banco/ranking_match.db` é criado a partir de [`banco/schema.sql`](banco/schema.sql) e [`banco/seed.sql`](banco/seed.sql). A seed traz as 3 categorias, 148 itens (50 jogos, 50 bandas de rock e metal e 48 séries e animes) e 6 pessoas de exemplo (Ana, Bruno, Carla, Diego, Elisa e Felipe) já com notas.
 
 Roteiro sugerido:
 
@@ -132,7 +132,7 @@ Roteiro sugerido:
 2. **Cadastro**: cadastre-se, escolha uma categoria, clique nos itens de que gosta, começando pelos que mais gosta, e salve a lista. Ajuste as notas nos dois eixos e salve também.
 3. **Compatibilidade**: a seed não tem listas, então salve a lista de pelo menos 2 pessoas na mesma categoria pelo Cadastro. Depois, veja quem é mais compatível com quem.
 
-Para voltar o banco ao estado inicial, feche o app, apague o arquivo `banco/ranking_match.db` e rode de novo.
+Para voltar o banco ao estado inicial, feche o app, apague o arquivo `banco/ranking_match.db` e rode de novo. Faça isso também depois de atualizar o repositório quando a seed mudar: ela só insere o que ainda não existe, então um banco antigo continua com as categorias e os itens antigos.
 
 Para rodar os testes:
 
