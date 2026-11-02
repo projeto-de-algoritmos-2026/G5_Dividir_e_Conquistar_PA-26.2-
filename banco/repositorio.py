@@ -58,7 +58,8 @@ def salvar_ranking(
 ) -> None:
     """Grava o ranking da pessoa na categoria, substituindo o anterior.
 
-    ``item_ids_em_ordem[0]`` é o favorito (posição 1).
+    A lista tem só os itens de que a pessoa gosta (pelo menos 1), em ordem de
+    preferência: ``item_ids_em_ordem[0]`` é o favorito (posição 1).
     """
     _exigir_pessoa(conn, pessoa_id)
     _exigir_categoria(conn, categoria_id)
@@ -99,18 +100,16 @@ def obter_ranking(
 
 
 def pessoas_com_ranking(conn: sqlite3.Connection, categoria_id: int) -> list[dict]:
-    """Devolve as pessoas que têm ranking completo na categoria."""
+    """Devolve as pessoas que escolheram pelo menos 1 item na categoria."""
     linhas = conn.execute(
         """
-        SELECT pessoa.id, pessoa.nome
+        SELECT DISTINCT pessoa.id, pessoa.nome
           FROM pessoa
           JOIN ranking ON ranking.pessoa_id = pessoa.id
           JOIN item ON item.id = ranking.item_id AND item.categoria_id = ?
-         GROUP BY pessoa.id, pessoa.nome
-        HAVING COUNT(*) = (SELECT COUNT(*) FROM item WHERE categoria_id = ?)
          ORDER BY pessoa.nome
         """,
-        (categoria_id, categoria_id),
+        (categoria_id,),
     ).fetchall()
     return [dict(linha) for linha in linhas]
 
@@ -163,19 +162,15 @@ def listar_notas(conn: sqlite3.Connection, categoria_id: int) -> list[dict]:
 
 
 def _validar_ranking(item_ids_em_ordem: list[int], ids_da_categoria: list[int]) -> None:
-    """Confere que o ranking é uma permutação dos itens da categoria."""
+    """Confere que o ranking tem pelo menos 1 item, sem repetição, todos da categoria."""
+    if not item_ids_em_ordem:
+        raise ValueError("Escolha pelo menos 1 item.")
+
     if len(set(item_ids_em_ordem)) != len(item_ids_em_ordem):
         raise ValueError("O ranking não pode repetir itens.")
 
-    esperados = set(ids_da_categoria)
-    informados = set(item_ids_em_ordem)
-
-    if informados - esperados:
+    if set(item_ids_em_ordem) - set(ids_da_categoria):
         raise ValueError("O ranking contém item que não pertence à categoria.")
-    if esperados - informados:
-        raise ValueError(
-            f"O ranking precisa conter todos os {len(esperados)} itens da categoria."
-        )
 
 
 def _validar_coordenada(eixo: str, valor: float) -> None:
