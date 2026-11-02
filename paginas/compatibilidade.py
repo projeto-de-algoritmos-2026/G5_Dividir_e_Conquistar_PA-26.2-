@@ -5,7 +5,7 @@ import sqlite3
 import streamlit as st
 
 from banco.repositorio import listar_categorias, pessoas_com_ranking
-from servicos.compatibilidade import ranking_compatibilidade
+from servicos.compatibilidade import compatibilidade, ranking_compatibilidade
 
 
 def render(conn: sqlite3.Connection) -> None:
@@ -29,6 +29,8 @@ def render(conn: sqlite3.Connection) -> None:
         return
 
     _secao_mais_compativeis(conn, categoria_id, nomes)
+    st.divider()
+    _secao_comparacao(conn, categoria_id, nomes)
 
 
 def _secao_mais_compativeis(
@@ -62,4 +64,36 @@ def _secao_mais_compativeis(
                 min_value=0, max_value=100, format="%.1f%%"
             ),
         },
+    )
+
+
+def _secao_comparacao(
+    conn: sqlite3.Connection, categoria_id: int, nomes: dict[int, str]
+) -> None:
+    """Compatibilidade entre duas pessoas escolhidas."""
+    st.subheader("Comparar duas pessoas")
+
+    ids = list(nomes)
+    col_a, col_b = st.columns(2)
+    pessoa_a_id = col_a.selectbox(
+        "Pessoa A",
+        options=ids,
+        format_func=nomes.get,
+        key=f"compatibilidade_a_{categoria_id}",
+    )
+    pessoa_b_id = col_b.selectbox(
+        "Pessoa B",
+        options=ids,
+        index=1,
+        format_func=nomes.get,
+        key=f"compatibilidade_b_{categoria_id}",
+    )
+
+    resultado = compatibilidade(conn, pessoa_a_id, pessoa_b_id, categoria_id)
+
+    col_percentual, col_inversoes = st.columns(2)
+    col_percentual.metric("Compatibilidade", f"{resultado['percentual']:.1f}%")
+    col_inversoes.metric(
+        "Pares em desacordo (inversões)",
+        f"{resultado['inversoes']} de {resultado['total_pares']}",
     )
