@@ -71,3 +71,36 @@ Os dois algoritmos são testados contra uma força bruta O(n²) em 200 casos ale
 **Dupla mais parecida**: notas da categoria no plano, com o par de pontos mais próximo destacado.
 
 ![Aba Dupla mais parecida](docs/screenshots/dupla.png)
+
+## Instalação
+
+**Linguagem**: Python 3.10 ou superior<br>
+**Framework**: Streamlit<br>
+**Banco de dados**: SQLite (já vem com o Python)<br>
+
+As dependências estão no [`requirements.txt`](requirements.txt): Streamlit, Altair e pytest.
+
+1. Clone o repositório:
+
+   ```bash
+   git clone https://github.com/projeto-de-algoritmos-2026/G5_Dividir_e_Conquistar_PA-26.2-.git
+   cd G5_Dividir_e_Conquistar_PA-26.2-
+   ```
+
+2. Crie e ative um ambiente virtual:
+
+   ```bash
+   # Linux / macOS
+   python3 -m venv .venv
+   source .venv/bin/activate
+
+   # Windows (PowerShell)
+   python -m venv .venv
+   .venv\Scripts\Activate.ps1
+   ```
+
+3. Instale as dependências:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
