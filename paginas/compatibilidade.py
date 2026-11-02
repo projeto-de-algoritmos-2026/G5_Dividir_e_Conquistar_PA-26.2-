@@ -53,7 +53,12 @@ def _secao_mais_compativeis(
         key=f"compatibilidade_pessoa_{categoria_id}",
     )
 
-    linhas = ranking_compatibilidade(conn, pessoa_id, categoria_id)
+    try:
+        linhas = ranking_compatibilidade(conn, pessoa_id, categoria_id)
+    except ValueError as erro:
+        st.error(str(erro))
+        return
+
     st.dataframe(
         [
             {
@@ -94,7 +99,12 @@ def _secao_comparacao(
         key=f"compatibilidade_b_{categoria_id}",
     )
 
-    resultado = compatibilidade(conn, pessoa_a_id, pessoa_b_id, categoria_id)
+    # Inclui o caso A == B: o backend devolve a mensagem pronta para mostrar.
+    try:
+        resultado = compatibilidade(conn, pessoa_a_id, pessoa_b_id, categoria_id)
+    except ValueError as erro:
+        st.error(str(erro))
+        return
 
     col_percentual, col_inversoes = st.columns(2)
     col_percentual.metric("Compatibilidade", f"{resultado['percentual']:.1f}%")
