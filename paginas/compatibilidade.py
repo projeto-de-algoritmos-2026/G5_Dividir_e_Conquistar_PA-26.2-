@@ -5,6 +5,7 @@ import sqlite3
 import streamlit as st
 
 from banco.repositorio import listar_categorias, pessoas_com_ranking
+from servicos.compatibilidade import ranking_compatibilidade
 
 
 def render(conn: sqlite3.Connection) -> None:
@@ -27,11 +28,38 @@ def render(conn: sqlite3.Connection) -> None:
         )
         return
 
+    _secao_mais_compativeis(conn, categoria_id, nomes)
+
+
+def _secao_mais_compativeis(
+    conn: sqlite3.Connection, categoria_id: int, nomes: dict[int, str]
+) -> None:
+    """Tabela com todas as outras pessoas, da mais para a menos compatível."""
+    st.subheader("Mais compatíveis")
+
     # A chave inclui a categoria porque a lista de pessoas muda de uma
     # categoria para outra.
-    st.selectbox(
+    pessoa_id = st.selectbox(
         "Pessoa",
         options=list(nomes),
         format_func=nomes.get,
         key=f"compatibilidade_pessoa_{categoria_id}",
+    )
+
+    linhas = ranking_compatibilidade(conn, pessoa_id, categoria_id)
+    st.dataframe(
+        [
+            {
+                "Pessoa": linha["nome"],
+                "Compatibilidade": linha["percentual"],
+                "Inversões": linha["inversoes"],
+            }
+            for linha in linhas
+        ],
+        hide_index=True,
+        column_config={
+            "Compatibilidade": st.column_config.ProgressColumn(
+                min_value=0, max_value=100, format="%.1f%%"
+            ),
+        },
     )
