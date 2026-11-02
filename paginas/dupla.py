@@ -31,9 +31,15 @@ def render(conn: sqlite3.Connection) -> None:
     categoria = categorias_por_id[categoria_id]
 
     notas = listar_notas(conn, categoria_id)
-    dupla = dupla_mais_parecida(conn, categoria_id)
-    ids_dupla = {dupla["pessoa_a"]["id"], dupla["pessoa_b"]["id"]}
+    try:
+        dupla = dupla_mais_parecida(conn, categoria_id)
+    except ValueError as erro:
+        # Menos de 2 pessoas com nota: mostra o que houver, sem destaque.
+        st.altair_chart(_grafico(notas, set(), categoria), width="stretch")
+        st.error(str(erro))
+        return
 
+    ids_dupla = {dupla["pessoa_a"]["id"], dupla["pessoa_b"]["id"]}
     st.altair_chart(_grafico(notas, ids_dupla, categoria), width="stretch")
 
     pessoa_a, pessoa_b = dupla["pessoa_a"], dupla["pessoa_b"]
