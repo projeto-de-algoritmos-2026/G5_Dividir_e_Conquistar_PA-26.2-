@@ -1,6 +1,7 @@
 """Aba Compatibilidade: compatibilidade entre rankings (contagem de inversões)."""
 
 import sqlite3
+from itertools import zip_longest
 
 import streamlit as st
 
@@ -23,15 +24,21 @@ def render(conn: sqlite3.Connection) -> None:
         key="compatibilidade_categoria",
     )
 
-    # Só entra quem tem ranking completo na categoria: sem ranking não há o que
-    # comparar.
+    # Só entra quem escolheu pelo menos 1 item na categoria: sem lista não há
+    # o que comparar.
     nomes = {p["id"]: p["nome"] for p in pessoas_com_ranking(conn, categoria_id)}
     if len(nomes) < 2:
         st.info(
-            "São necessárias pelo menos 2 pessoas com ranking nessa categoria. "
-            "Salve os rankings na aba Cadastro."
+            "São necessárias pelo menos 2 pessoas com lista salva nessa categoria. "
+            "Escolha os itens na aba Cadastro."
         )
         return
+
+    st.caption(
+        "Compatibilidade = itens em comum ÷ itens escolhidos por pelo menos um "
+        "dos dois × (1 − inversões ÷ pares entre os itens em comum). Gostar das "
+        "mesmas coisas, na mesma ordem, dá 100%."
+    )
 
     _secao_mais_compativeis(conn, categoria_id, nomes)
     st.divider()
@@ -64,6 +71,7 @@ def _secao_mais_compativeis(
             {
                 "Pessoa": linha["nome"],
                 "Compatibilidade": linha["percentual"],
+                "Em comum": linha["em_comum"],
                 "Inversões": linha["inversoes"],
             }
             for linha in linhas
@@ -106,8 +114,11 @@ def _secao_comparacao(
         st.error(str(erro))
         return
 
-    col_percentual, col_inversoes = st.columns(2)
+    col_percentual, col_comum, col_inversoes = st.columns(3)
     col_percentual.metric("Compatibilidade", f"{resultado['percentual']:.1f}%")
+    col_comum.metric(
+        "Itens em comum", f"{resultado['em_comum']} de {resultado['escolhidos']}"
+    )
     col_inversoes.metric(
         "Pares em desacordo (inversões)",
         f"{resultado['inversoes']} de {resultado['total_pares']}",
@@ -123,21 +134,31 @@ def _rankings_lado_a_lado(
     pessoa_a_id: int,
     pessoa_b_id: int,
 ) -> None:
-    """Os dois rankings, posição por posição, para ver onde eles discordam."""
+    """As duas listas, posição por posição; os itens em comum ficam marcados."""
     nomes_itens = {i["id"]: i["nome"] for i in listar_itens(conn, categoria_id)}
     ranking_a = obter_ranking(conn, pessoa_a_id, categoria_id)
     ranking_b = obter_ranking(conn, pessoa_b_id, categoria_id)
 
+    em_comum = set(ranking_a) & set(ranking_b)
+
+    def rotulo(item_id: int | None) -> str:
+        if item_id is None:
+            return ""
+        marca = "★ " if item_id in em_comum else ""
+        return f"{marca}{nomes_itens[item_id]}"
+
+    # zip_longest: as listas podem ter tamanhos diferentes.
     st.dataframe(
         [
             {
                 "Posição": posicao,
-                nomes[pessoa_a_id]: nomes_itens[item_a],
-                nomes[pessoa_b_id]: nomes_itens[item_b],
+                nomes[pessoa_a_id]: rotulo(item_a),
+                nomes[pessoa_b_id]: rotulo(item_b),
             }
             for posicao, (item_a, item_b) in enumerate(
-                zip(ranking_a, ranking_b), start=1
+                zip_longest(ranking_a, ranking_b), start=1
             )
         ],
         hide_index=True,
     )
+    st.caption("★ item escolhido pelas duas pessoas.")
