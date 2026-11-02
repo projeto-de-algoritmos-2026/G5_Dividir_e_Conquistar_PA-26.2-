@@ -70,50 +70,98 @@ def _secao_nova_pessoa(conn: sqlite3.Connection) -> None:
     # O selectbox de pessoa ainda não foi desenhado nesta execução, então dá
     # para definir o valor dele aqui.
     st.session_state[CHAVE_PESSOA] = novo_id
-    st.success(f"Pessoa cadastrada: {nome.strip()}. Agora preencha o ranking e as notas.")
+    st.success(f"Pessoa cadastrada: {nome.strip()}. Agora escolha do que gosta e as notas.")
 
 
 def _secao_ranking(conn: sqlite3.Connection, pessoa_id: int, categoria_id: int) -> None:
-    """Ranking dos itens da categoria: a ordem dos cliques define a posição."""
-    st.subheader("Ranking")
-    st.caption("Clique nos itens do favorito para o menos favorito.")
+    """Lista de itens da categoria: a pessoa clica nos que gosta.
+
+    A ordem dos cliques vira a ordem de preferência (1º clicado = favorito),
+    que é o que a aba Compatibilidade usa para contar inversões.
+    """
+    st.subheader("Do que você gosta")
+    st.caption(
+        "Clique nos itens de que você gosta, começando pelos que mais gosta. "
+        "Clique de novo para tirar da lista."
+    )
 
     itens = listar_itens(conn, categoria_id)
     nomes_itens = {i["id"]: i["nome"] for i in itens}
+    salvo = obter_ranking(conn, pessoa_id, categoria_id)
 
-    # A chave inclui pessoa e categoria para o widget recomeçar (com o ranking
-    # salvo como valor inicial) quando qualquer uma das duas mudar.
-    ordem = st.multiselect(
-        "Itens em ordem de preferência",
-        options=list(nomes_itens),
-        default=obter_ranking(conn, pessoa_id, categoria_id),
-        format_func=nomes_itens.get,
-        key=f"cadastro_ranking_{pessoa_id}_{categoria_id}",
-    )
+    # Uma lista por pessoa e categoria, começando pelo que já está salvo.
+    chave = f"cadastro_lista_{pessoa_id}_{categoria_id}"
+    if chave not in st.session_state:
+        st.session_state[chave] = salvo
+    escolhidos: list[int] = st.session_state[chave]
 
-    if ordem:
+    colunas = st.columns(2)
+    for indice, item in enumerate(itens):
+        selecionado = item["id"] in escolhidos
+        rotulo = (
+            f"{escolhidos.index(item['id']) + 1}. {item['nome']}"
+            if selecionado
+            else item["nome"]
+        )
+        colunas[indice % 2].button(
+            rotulo,
+            key=f"cadastro_item_{pessoa_id}_{categoria_id}_{item['id']}",
+            type="primary" if selecionado else "secondary",
+            width="stretch",
+            on_click=_alternar_item,
+            args=(chave, item["id"]),
+        )
+
+    st.markdown("**Sua lista**")
+    if escolhidos:
         st.markdown(
             "\n".join(
                 f"{posicao}. {nomes_itens[item_id]}"
-                for posicao, item_id in enumerate(ordem, start=1)
+                for posicao, item_id in enumerate(escolhidos, start=1)
             )
         )
+    else:
+        st.caption("Nenhum item escolhido ainda.")
 
-    faltando = len(itens) - len(ordem)
-    if faltando:
-        st.caption(f"Faltam {faltando} de {len(itens)} itens.")
-
-    if st.button(
-        "Salvar ranking",
-        disabled=faltando > 0,
+    col_salvar, col_limpar = st.columns(2)
+    salvar = col_salvar.button(
+        "Salvar lista",
+        disabled=not escolhidos,
         key=f"cadastro_salvar_ranking_{pessoa_id}_{categoria_id}",
-    ):
+    )
+    col_limpar.button(
+        "Limpar",
+        disabled=not escolhidos,
+        key=f"cadastro_limpar_{pessoa_id}_{categoria_id}",
+        on_click=_limpar_lista,
+        args=(chave,),
+    )
+
+    if salvar:
         try:
-            salvar_ranking(conn, pessoa_id, categoria_id, ordem)
+            salvar_ranking(conn, pessoa_id, categoria_id, escolhidos)
         except ValueError as erro:
             st.error(str(erro))
         else:
-            st.success("Ranking salvo.")
+            salvo = escolhidos
+            st.success("Lista salva.")
+
+    if escolhidos and escolhidos != salvo:
+        st.caption("Alterações não salvas.")
+
+
+def _alternar_item(chave: str, item_id: int) -> None:
+    """Põe o item no fim da lista ou, se já estiver nela, tira."""
+    lista = st.session_state[chave]
+    if item_id in lista:
+        st.session_state[chave] = [i for i in lista if i != item_id]
+    else:
+        st.session_state[chave] = [*lista, item_id]
+
+
+def _limpar_lista(chave: str) -> None:
+    """Esvazia a lista (o que está salvo no banco só muda ao salvar)."""
+    st.session_state[chave] = []
 
 
 def _secao_notas(conn: sqlite3.Connection, pessoa_id: int, categoria: dict) -> None:

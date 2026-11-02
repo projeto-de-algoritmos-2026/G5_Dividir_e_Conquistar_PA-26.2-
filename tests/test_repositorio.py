@@ -92,9 +92,24 @@ def test_obter_ranking_inexistente(conn: sqlite3.Connection) -> None:
     assert obter_ranking(conn, 1, 1) == []
 
 
-def test_salvar_ranking_incompleto(conn: sqlite3.Connection) -> None:
-    with pytest.raises(ValueError, match="todos os 8 itens"):
-        salvar_ranking(conn, 1, 1, [1, 2, 3])
+def test_salvar_ranking_parcial(conn: sqlite3.Connection) -> None:
+    # A pessoa escolhe só os itens de que gosta, em ordem de preferência.
+    salvar_ranking(conn, 1, 1, [5, 2, 7])
+
+    assert obter_ranking(conn, 1, 1) == [5, 2, 7]
+
+
+def test_salvar_ranking_vazio(conn: sqlite3.Connection) -> None:
+    with pytest.raises(ValueError, match="pelo menos 1 item"):
+        salvar_ranking(conn, 1, 1, [])
+
+
+def test_salvar_ranking_menor_substitui_o_maior(conn: sqlite3.Connection) -> None:
+    salvar_ranking(conn, 1, 1, [1, 2, 3, 4, 5, 6, 7, 8])
+    salvar_ranking(conn, 1, 1, [3, 1])
+
+    assert obter_ranking(conn, 1, 1) == [3, 1]
+    assert conn.execute("SELECT COUNT(*) FROM ranking").fetchone()[0] == 2
 
 
 def test_salvar_ranking_com_item_repetido(conn: sqlite3.Connection) -> None:
@@ -116,7 +131,7 @@ def test_salvar_ranking_invalido_nao_grava_nada(conn: sqlite3.Connection) -> Non
     salvar_ranking(conn, 1, 1, [1, 2, 3, 4, 5, 6, 7, 8])
 
     with pytest.raises(ValueError):
-        salvar_ranking(conn, 1, 1, [1, 2, 3])
+        salvar_ranking(conn, 1, 1, [1, 2, 9])
 
     assert obter_ranking(conn, 1, 1) == [1, 2, 3, 4, 5, 6, 7, 8]
 
@@ -133,17 +148,13 @@ def test_pessoas_com_ranking(conn: sqlite3.Connection) -> None:
     ]
 
 
-def test_pessoas_com_ranking_ignora_ranking_incompleto(
+def test_pessoas_com_ranking_inclui_ranking_parcial(
     conn: sqlite3.Connection,
 ) -> None:
-    # Ranking parcial inserido direto no banco, sem passar pela validação.
-    conn.executemany(
-        "INSERT INTO ranking (pessoa_id, item_id, posicao) VALUES (?, ?, ?)",
-        [(1, 1, 1), (1, 2, 2)],
-    )
-    conn.commit()
+    salvar_ranking(conn, 1, 1, [4])
 
-    assert pessoas_com_ranking(conn, 1) == []
+    assert pessoas_com_ranking(conn, 1) == [{"id": 1, "nome": "Ana"}]
+    assert pessoas_com_ranking(conn, 2) == []
 
 
 def test_salvar_nota_insere_e_atualiza(conn: sqlite3.Connection) -> None:

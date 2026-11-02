@@ -14,8 +14,18 @@ def compatibilidade(
 ) -> dict:
     """Mede a compatibilidade entre duas pessoas em uma categoria.
 
-    Devolve ``{"inversoes", "total_pares", "percentual"}``. Rankings idênticos
-    dão 100.0 e rankings exatamente invertidos dão 0.0.
+    Cada pessoa escolheu só os itens de que gosta, em ordem de preferência. A
+    compatibilidade junta duas coisas:
+
+    - **sobreposição**: itens em comum / itens escolhidos por pelo menos um;
+    - **concordância**: 1 − inversões / pares, contando as inversões (por
+      divisão e conquista) só entre os itens em comum.
+
+    ``percentual = 100 × sobreposição × concordância``. Com menos de 2 itens em
+    comum não há par para discordar e a concordância vale 1.
+
+    Devolve ``{"em_comum", "escolhidos", "inversoes", "total_pares",
+    "percentual"}``.
     """
     if pessoa_a_id == pessoa_b_id:
         raise ValueError("Escolha duas pessoas diferentes para comparar.")
@@ -23,24 +33,26 @@ def compatibilidade(
     ranking_a = _exigir_ranking(conn, pessoa_a_id, categoria_id)
     ranking_b = _exigir_ranking(conn, pessoa_b_id, categoria_id)
 
-    if set(ranking_a) != set(ranking_b):
-        raise ValueError("Os dois rankings não cobrem os mesmos itens da categoria.")
-
     posicao_em_b = {item_id: posicao for posicao, item_id in enumerate(ranking_b)}
+    em_comum = [item_id for item_id in ranking_a if item_id in posicao_em_b]
+    escolhidos = len(set(ranking_a) | set(ranking_b))
 
-    # Percorrendo os itens na ordem de A, cada inversão na sequência das posições
-    # de B é um par em que as duas pessoas discordam.
-    sequencia = [posicao_em_b[item_id] for item_id in ranking_a]
+    # Percorrendo os itens em comum na ordem de A, cada inversão na sequência
+    # das posições de B é um par em que as duas pessoas discordam.
+    sequencia = [posicao_em_b[item_id] for item_id in em_comum]
     inversoes, _ = contar_inversoes(sequencia)
 
-    n = len(ranking_a)
+    n = len(em_comum)
     total_pares = n * (n - 1) // 2
-    percentual = 100.0 if total_pares == 0 else 100 * (1 - inversoes / total_pares)
+    concordancia = 1.0 if total_pares == 0 else 1 - inversoes / total_pares
+    sobreposicao = n / escolhidos
 
     return {
+        "em_comum": n,
+        "escolhidos": escolhidos,
         "inversoes": inversoes,
         "total_pares": total_pares,
-        "percentual": round(percentual, 1),
+        "percentual": round(100 * sobreposicao * concordancia, 1),
     }
 
 
@@ -49,8 +61,8 @@ def ranking_compatibilidade(
 ) -> list[dict]:
     """Compara a pessoa com todas as outras que têm ranking na categoria.
 
-    Devolve ``[{"pessoa_id", "nome", "inversoes", "percentual"}, ...]`` em ordem
-    decrescente de percentual (empate: nome crescente).
+    Devolve ``[{"pessoa_id", "nome", "em_comum", "inversoes", "percentual"}, ...]``
+    em ordem decrescente de percentual (empate: nome crescente).
     """
     _exigir_ranking(conn, pessoa_id, categoria_id)
 
@@ -63,6 +75,7 @@ def ranking_compatibilidade(
             {
                 "pessoa_id": outra["id"],
                 "nome": outra["nome"],
+                "em_comum": medida["em_comum"],
                 "inversoes": medida["inversoes"],
                 "percentual": medida["percentual"],
             }
