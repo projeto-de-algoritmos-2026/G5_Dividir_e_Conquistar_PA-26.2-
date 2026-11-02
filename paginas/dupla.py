@@ -57,4 +57,8 @@ def _grafico(notas: list[dict], categoria: dict) -> alt.LayerChart:
         )
     )
 
-    return alt.layer(pontos).properties(height=480)
+    nomes = pontos.mark_text(align="left", dx=9, dy=-9, fontSize=13).encode(
+        text="nome:N"
+    )
+
+    return alt.layer(pontos, nomes).properties(height=480)
