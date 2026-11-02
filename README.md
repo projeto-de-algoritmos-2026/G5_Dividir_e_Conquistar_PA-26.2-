@@ -104,3 +104,41 @@ As dependências estão no [`requirements.txt`](requirements.txt): Streamlit, Al
    ```bash
    pip install -r requirements.txt
    ```
+
+## Uso
+
+Com o ambiente virtual ativado, na raiz do repositório:
+
+```bash
+streamlit run app.py
+```
+
+O app abre no navegador em `http://localhost:8501`. Na primeira execução, o banco `banco/ranking_match.db` é criado a partir de [`banco/schema.sql`](banco/schema.sql) e [`banco/seed.sql`](banco/seed.sql). A seed traz as 3 categorias, os 24 itens e 6 pessoas de exemplo (Ana, Bruno, Carla, Diego, Elisa e Felipe) já com notas.
+
+Roteiro sugerido:
+
+1. **Dupla mais parecida**: já funciona com os dados da seed. Escolha uma categoria para ver o gráfico e a dupla mais próxima.
+2. **Cadastro**: cadastre-se, escolha uma categoria, clique nos itens do favorito ao menos favorito e salve o ranking. Ajuste as notas nos dois eixos e salve também.
+3. **Compatibilidade**: a seed não tem rankings, então salve o ranking de pelo menos 2 pessoas na mesma categoria pelo Cadastro. Depois, veja quem é mais compatível com quem.
+
+Para voltar o banco ao estado inicial, feche o app, apague o arquivo `banco/ranking_match.db` e rode de novo.
+
+Para rodar os testes:
+
+```bash
+python -m pytest -q
+```
+
+## Outros
+
+Estrutura do projeto:
+
+```
+app.py               ponto de entrada do Streamlit (abas)
+paginas/             uma página por aba: cadastro, compatibilidade, dupla
+servicos/            regras de cada aba, chamadas pela interface
+algoritmos/          contagem de inversões e par de pontos mais próximo
+banco/               schema, seed, conexão e acesso ao SQLite
+tests/               testes com pytest (algoritmos contra força bruta, banco e serviços)
+docs/screenshots/    imagens deste README
+```
