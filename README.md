@@ -13,21 +13,21 @@
 
 O **Ranking Match** descobre afinidades entre pessoas a partir dos gostos delas em três categorias: **Jogos**, **Músicas** e **Séries/Animes**. Cada pessoa informa duas coisas por categoria:
 
-- **Um ranking** dos 8 itens da categoria, do favorito ao menos favorito.
+- **Do que gosta**: dos 8 itens da categoria, a pessoa clica só nos de que gosta, começando pelos que mais gosta. A ordem dos cliques é a ordem de preferência.
 - **Um ponto (x, y)**, com notas de 0 a 10 em dois eixos que descrevem o gosto dela. Em Jogos, por exemplo, os eixos são *Casual → Competitivo* e *História → Gameplay*.
 
 Com esses dados o app tem duas abas de resultado, cada uma resolvida por um algoritmo de divisão e conquista:
 
-- **Compatibilidade**: o quanto os rankings de duas pessoas concordam, medido pela **contagem de inversões**. A aba mostra todas as pessoas da mais para a menos compatível e permite comparar duas lado a lado.
+- **Compatibilidade**: o quanto as listas de duas pessoas combinam: se gostam das mesmas coisas e na mesma ordem, medida com a **contagem de inversões**. A aba mostra todas as pessoas da mais para a menos compatível e permite comparar duas lado a lado.
 - **Dupla mais parecida**: as duas pessoas com gostos mais próximos na categoria, encontradas pelo **par de pontos mais próximo**. A aba mostra o gráfico das notas com a dupla destacada.
 
-A aba **Cadastro** é onde as pessoas são criadas e preenchem o ranking e as notas.
+A aba **Cadastro** é onde as pessoas são criadas e escolhem do que gostam e as notas.
 
 ### Algoritmos
 
 #### Contagem de inversões: aba Compatibilidade
 
-Os itens são percorridos na ordem do ranking da pessoa A, anotando a posição que a pessoa B deu a cada um. Cada **inversão** nessa sequência (um par `i < j` com `seq[i] > seq[j]`) é um par de itens em que as duas pessoas discordam sobre qual vem antes.
+Só os itens que as duas pessoas escolheram entram nesta etapa. Eles são percorridos na ordem da lista da pessoa A, anotando a posição que cada um tem na lista da pessoa B. Cada **inversão** nessa sequência (um par `i < j` com `seq[i] > seq[j]`) é um par de itens em que as duas pessoas discordam sobre qual vem antes.
 
 A contagem é feita com o *sort-and-count* (Kleinberg & Tardos, seção 5.3):
 
@@ -35,7 +35,18 @@ A contagem é feita com o *sort-and-count* (Kleinberg & Tardos, seção 5.3):
 2. **Conquistar:** cada metade é ordenada e tem suas inversões contadas recursivamente.
 3. **Combinar:** na intercalação das duas metades, sempre que um elemento da direita sai antes dos que ainda restam na esquerda, ele forma uma inversão com cada um deles. Todas são somadas de uma vez.
 
-Complexidade **O(n log n)**, contra O(n²) de comparar todos os pares. A compatibilidade é `100 × (1 − inversões / total de pares)`, com `total de pares = n(n − 1)/2`. Com 8 itens, rankings idênticos dão 100% (0 inversões) e rankings invertidos dão 0% (28 inversões).
+Complexidade **O(n log n)**, contra O(n²) de comparar todos os pares.
+
+A compatibilidade junta o quanto as duas gostam das mesmas coisas com o quanto concordam na ordem:
+
+```
+compatibilidade = 100 × (em comum / escolhidos) × (1 − inversões / pares)
+```
+
+- `em comum`: itens que as duas escolheram; `escolhidos`: itens que pelo menos uma escolheu.
+- `pares = c(c − 1)/2`, com `c` itens em comum. Com menos de 2 itens em comum não há par para discordar, e esse fator vale 1.
+
+Exemplo: Ana escolhe `[Minecraft, CS2, Stardew, Elden Ring]` e Bruno `[CS2, Minecraft, Stardew, LoL]`. Em comum há 3 itens de 5 escolhidos, e a única discordância é Minecraft × CS2 (1 inversão em 3 pares). Compatibilidade = `100 × 3/5 × (1 − 1/3) = 40%`. Duas listas iguais dão 100%, e listas sem nada em comum dão 0%.
 
 Implementação: [`algoritmos/inversoes.py`](algoritmos/inversoes.py).
 
@@ -60,11 +71,11 @@ Os dois algoritmos são testados contra uma força bruta O(n²) em 200 casos ale
 
 ## Screenshots
 
-**Cadastro**: a pessoa clica nos itens do favorito ao menos favorito e ajusta as notas nos dois eixos da categoria.
+**Cadastro**: todos os itens da categoria ficam visíveis; a pessoa clica nos de que gosta, que entram numerados na lista dela, e ajusta as notas nos dois eixos.
 
 ![Aba Cadastro](docs/screenshots/cadastro.png)
 
-**Compatibilidade**: as pessoas mais compatíveis com a selecionada e a comparação direta entre duas, com os rankings lado a lado.
+**Compatibilidade**: as pessoas mais compatíveis com a selecionada e a comparação direta entre duas, com as listas lado a lado e os itens em comum marcados.
 
 ![Aba Compatibilidade](docs/screenshots/compatibilidade.png)
 
@@ -118,8 +129,8 @@ O app abre no navegador em `http://localhost:8501`. Na primeira execução, o ba
 Roteiro sugerido:
 
 1. **Dupla mais parecida**: já funciona com os dados da seed. Escolha uma categoria para ver o gráfico e a dupla mais próxima.
-2. **Cadastro**: cadastre-se, escolha uma categoria, clique nos itens do favorito ao menos favorito e salve o ranking. Ajuste as notas nos dois eixos e salve também.
-3. **Compatibilidade**: a seed não tem rankings, então salve o ranking de pelo menos 2 pessoas na mesma categoria pelo Cadastro. Depois, veja quem é mais compatível com quem.
+2. **Cadastro**: cadastre-se, escolha uma categoria, clique nos itens de que gosta, começando pelos que mais gosta, e salve a lista. Ajuste as notas nos dois eixos e salve também.
+3. **Compatibilidade**: a seed não tem listas, então salve a lista de pelo menos 2 pessoas na mesma categoria pelo Cadastro. Depois, veja quem é mais compatível com quem.
 
 Para voltar o banco ao estado inicial, feche o app, apague o arquivo `banco/ranking_match.db` e rode de novo.
 
