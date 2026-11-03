@@ -6,8 +6,8 @@
 
 | Matrícula | Aluno |
 | -- | -- |
-| xx/xxxxxxx | Eduardo Jesus Dal Pizzol |
-| xx/xxxxxxx | Luana Carvalho |
+| 251008114 | Eduardo Jesus Dal Pizzol |
+| 242004840 | Luana Carvalho |
 
 ## Sobre
 
