@@ -67,7 +67,7 @@ Os dois algoritmos são testados contra uma força bruta O(n²) em 200 casos ale
 
 ### Vídeo de apresentação
 
-[Clique aqui para assistir ao vídeo de apresentação](LINK_DO_VIDEO)
+[Clique aqui para assistir ao vídeo de apresentação](https://www.youtube.com/watch?v=7c3DV8BYaa4)
 
 ## Screenshots
 
